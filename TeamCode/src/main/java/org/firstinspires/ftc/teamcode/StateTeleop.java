@@ -27,7 +27,7 @@ public class StateTeleop extends LinearOpMode {
     private CRServo cServo;
     private Servo boxServo;
     private Servo udServo;
-    private Servo lrServo;
+    private CRServo lrServo;
     private BNO055IMU imu;
     private ColorSensor color;
 
@@ -35,8 +35,9 @@ public class StateTeleop extends LinearOpMode {
     int freight = 0; //Freight Location
     private double angleZeroValue = -3.1415 / 2.0;  // -pi/2
     double speedModifier = 0.8;
-    double boxHome = 0.6;
-    double boxDrive = 0.4;
+    double boxHome = 0.75;
+    double boxDrive = 0.6;
+    double boxDump = 0;
     double robotAngle = 0; //For Field Relative
     double lrPosition=0;
     double udPosition=0;
@@ -50,10 +51,6 @@ public class StateTeleop extends LinearOpMode {
     Telemetry.Item UDServo;
     Telemetry.Item currentFreight;
     //sounds
-    int audreyOn = hardwareMap.appContext.getResources().getIdentifier("audrey_on", "raw", hardwareMap.appContext.getPackageName());
-    int joshuaOn = hardwareMap.appContext.getResources().getIdentifier("joshua_on",   "raw", hardwareMap.appContext.getPackageName());
-    int audreyOff = hardwareMap.appContext.getResources().getIdentifier("audrey_off", "raw", hardwareMap.appContext.getPackageName());
-    int joshuaOff = hardwareMap.appContext.getResources().getIdentifier("joshua_off",   "raw", hardwareMap.appContext.getPackageName());
     @Override
     public void runOpMode(){
         //HwMappings
@@ -73,12 +70,11 @@ public class StateTeleop extends LinearOpMode {
         boxServo = hardwareMap.get(Servo.class, "boxServo");
         cServo = hardwareMap.get(CRServo.class, "cServo");
         udServo = hardwareMap.get(Servo.class, "udServo");
-        lrServo = hardwareMap.get(Servo.class, "lrServo");
+        lrServo = hardwareMap.get(CRServo.class, "lrServo");
         //----------------------------
         boxServo.setPosition(boxHome);
         initIMU();
-        lrServo.setPosition(0.78);
-        udServo.setPosition(0);
+
         waitForStart();
 
 
@@ -106,23 +102,19 @@ public class StateTeleop extends LinearOpMode {
     public void checkForMode(){
         if(gamepad1.a){
             TSEmodeA = true;
-            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, audreyOn);
 
         }else if(gamepad1.b){
             TSEmodeA = false;
-            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, audreyOff);
 
         }
 
         if(gamepad2.a){
             TSEmodeB = true;
-            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, joshuaOn);
 
         }else if(gamepad2.b){
             TSEmodeB = false;
-            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, joshuaOff);
 
-            lrServo.setPosition(0.78);
+
             udServo.setPosition(0);
 
         }
@@ -227,7 +219,7 @@ public class StateTeleop extends LinearOpMode {
         // }
         if(servoControl){
             if(gamepad2.right_stick_y < -0.1){
-                boxServo.setPosition(gamepad2.right_stick_y+0.8);
+                boxServo.setPosition(gamepad2.right_stick_y);
             }else{
                 boxServo.setPosition(boxDrive);
 
@@ -267,20 +259,22 @@ public class StateTeleop extends LinearOpMode {
                 cServo.setPower(0);
             }
             if(gamepad2.left_stick_y >0){
-                udPosition -= 0.005;
+                udPosition -= 0.0025;
 
             }else if(gamepad2.left_stick_y <0){
-                udPosition += 0.005;
+                udPosition += 0.0025;
             }
 
             if(gamepad2.right_stick_x > 0){
-                lrPosition += 0.005;
+                lrServo.setPower(0.125);
             }else if(gamepad2.right_stick_x < 0){
-                lrPosition -= 0.005;
+                lrServo.setPower(-0.125);
+            }else{
+                lrServo.setPower(0);
             }
 
-            lrServo.setPosition(0.78 + lrPosition);
-            udServo.setPosition(0.54 + udPosition);
+
+            udServo.setPosition(0.5 + udPosition);
 
         }
     }
@@ -362,7 +356,6 @@ public class StateTeleop extends LinearOpMode {
             currentFreight = telemetry.addData("Freight Detected: ", "none");
 
         }
-        LRServo = telemetry.addData("lrServo Position ", lrServo.getPosition());
         UDServo = telemetry.addData("udServo Position ", udServo.getPosition());
 
         telemetry.update();
